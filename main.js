@@ -3,20 +3,18 @@ const drawButton = document.getElementById("draw")
 const api = 'http://deckofcardsapi.com/api/deck/';
 const deckID = null;
 function fetchThing(url) {
-    fetch(url)
+    return fetch(url)
     .then(res => res.json())
-    .then(data => {
-        return data;
-    })
     .catch(err => {
         console.log(`Error: ${err}`);
     });
 }
 
-
 function newDeck(numberDecks = 1) {
-    const url = api + `new/shuffle/?deck_count=${numberDecks}`
-    fetch(url)
+    let url = api + `new/shuffle/?deck_count=${numberDecks}`
+    console.log(url);
+    return fetchThing(url);
+/*     fetch(url)
     .then(res => res.json())
     .then(data => {
         console.log(data);
@@ -24,7 +22,7 @@ function newDeck(numberDecks = 1) {
     })
     .catch(err => {
         console.log(`Error: ${err}`);
-    });
+    }); */
 }
 
 function drawFromDeck(deckID, numberToDraw) {
@@ -39,4 +37,5 @@ function drawFromDeck(deckID, numberToDraw) {
     });
 }
 
-newDeck(1);
+newDeck(1)
+.then(deck => console.log(deck.deck_id));
