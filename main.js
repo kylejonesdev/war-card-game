@@ -30,9 +30,10 @@ function newDeck(numberDecks = 1) {
     console.log(url);
     return fetchThing(url)
         .then(obj => {
-        deckID = obj.deck_id
-        console.log(deckID);
-    });
+            localStorage.setItem('storedDeckID', obj.deck_id);
+            deckID = localStorage.getItem('storedDeckID');
+            console.log(deckID);
+        });
 }
 function drawCards(deckID, numberToDraw, pile) {
     const url = api + `${deckID}/draw/?count=${numberToDraw}`;
@@ -71,20 +72,21 @@ function getStatus() {
 }
 function newGame() {
     newDeck(1)
+}
+function clearHand() {
     while(yourHand.firstChild) {
         yourHand.removeChild(yourHand.firstChild);
     }
 }
-
-/*     
-    .then(deck => drawFromDeck(deck.deck_id, 2))
-    .then(res => {
-        let cards = res.cards;
-        cards.forEach(item => {
-            let img = document.createElement('img');
-            img.src = item.image;
-            let yourHand = document.getElementById('your-hand')
-            yourHand.appendChild(img);
-        })
-    });
-*/
+function setupGame() {
+    if(localStorage.getItem('storedDeckID')) {
+        deckID = localStorage.getItem('storedDeckID');
+        console.log(`Retrieved stored deck ID: ${deckID}`)
+        clearHand();
+        getStatus();
+    }
+    else {
+        newGame();
+    }
+}
+setupGame();
