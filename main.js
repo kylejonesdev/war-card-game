@@ -6,8 +6,11 @@ const yourHand = document.getElementById('player')
 newGameButton.addEventListener('click', newGame)
 drawButton.addEventListener('click', () => {
     drawCards(deckID, 1, 'player');
+    drawCards(deckID, 1, 'npc');
 });
-statusButton.addEventListener('click', getStatus)
+statusButton.addEventListener('click', () => {
+    getStatus('player');
+});
 
 const api = 'http://deckofcardsapi.com/api/deck/';
 let deckID = '';
@@ -50,16 +53,14 @@ function placeCardInPile(obj, pile) {
         cardDesignators += `${item.code},`;
         let img = document.createElement('img');
         img.src = item.image;
-        document.getElementById('player').appendChild(img);
+        document.getElementById(pile).appendChild(img);
     })
     const url = api + `${deckID}/pile/${pile}/add/?cards=${cardDesignators}`
     return fetchThing(url);
 }
-//TODO Change pile from hardcoded to parameter
-function getStatus() {
-    const url = api + `${deckID}/pile/player/list/`
+function getStatus(pileName) {
+    const url = api + `${deckID}/pile/${pileName}/list/`
     return fetchThing(url)
-    //TODO display cards from status like you are loading a save
     .then(obj => {
         let cards = obj.piles.player.cards;
         cards.forEach(item => {
@@ -83,7 +84,7 @@ function setupGame() {
         deckID = localStorage.getItem('storedDeckID');
         console.log(`Retrieved stored deck ID: ${deckID}`)
         clearHand();
-        getStatus();
+        getStatus('player');
     }
     else {
         newGame();
