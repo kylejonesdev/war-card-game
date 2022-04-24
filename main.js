@@ -33,7 +33,7 @@ class Game {
     }   
       
     newGame = () => {
-        participants.forEach(item => item.clearDOMHand());
+        participants.forEach(item => item.clearCardsDOM());
         let newDeckPromise = new Promise((resolve, reject) => {
             resolve(this.newDeck(1));
         })
@@ -61,21 +61,33 @@ class Participant {
         const url = api + `${this.game.deckID}/pile/${pileName}/add/?cards=${cardDesignators}`
         return this.game.fetchThing(url);
     }
+    removeCardsFromPile(numberToDraw, pileName = this.name) {
+        const url = api + `${this.game.deckID}/pile/${pileName}/draw/?count=${numberToDraw}`;
+        return this.game.fetchThing(url)
+        .then(obj => {
+            let cardArr = obj.cards;
+            this.showCardsDOM(cardArr);
+        })
+    }
     getStatus() {
         const url = api + `${this.game.deckID}/pile/${this.name}/list/`
         return this.game.fetchThing(url)
         .then(obj => {
-            let cardArr = obj.piles[this.name].cards; //player is undefined. Needs to evaluate to the variable Player.
-            this.clearDOMHand();
-            cardArr.forEach(item => {
-                let img = document.createElement('img');
-                img.src = item.image;
-                document.getElementById(this.name).appendChild(img);
-            })
+            let cardArr = obj.piles[this.name].cards;
+            this.clearCardsDOM();
             console.log(obj);
+            this.showCardsDOM(cardArr);
         })
-    }    
-    clearDOMHand() {
+    }
+    showCardsDOM(cardArr) {
+        cardArr.forEach(item => {
+            let img = document.createElement('img');
+            img.src = item.image;
+            document.getElementById(this.name).appendChild(img);
+            console.log(`${this.name} showed: ${item.code}`);
+        })        
+    }
+    clearCardsDOM() {
         let yourHand = document.getElementById(this.name)
         while(yourHand.firstChild) {
             yourHand.removeChild(yourHand.firstChild);
@@ -94,8 +106,8 @@ const statusButton = document.getElementById('status')
 //Listeners
 newGameButton.addEventListener('click', war.newGame)
 drawButton.addEventListener('click', () => {
-    player.drawCards(1);
-    npc.drawCards(1);
+    player.removeCardsFromPile(1);
+    npc.removeCardsFromPile(1);
 });
 statusButton.addEventListener('click', () => {
     player.getStatus();
