@@ -1,5 +1,19 @@
 const api = 'http://deckofcardsapi.com/api/deck/';
-
+const cardMap = {
+    2: 2,
+    3: 3,
+    4: 4,
+    5: 5,
+    6: 6,
+    7: 7,
+    8: 8,
+    9: 9,
+    0: 10,
+    'J': 11,
+    'Q': 12,
+    'K': 13,
+    'A': 14
+}
 class Game {
     constructor() {
         this.deckID = 'none';
@@ -30,10 +44,25 @@ class Game {
                 console.log(this.deckID);
             return obj;
             });
-    }   
-      
+    }
+    compareCards() {
+        //TODO: Add ability for players to put more than one card in battle. Loop through the array of cards in battle, add up the points, compare totals, then move the entire loser's side to the winner's side. This will require not showing the NPC's cards until "Compare" is pressed.
+        let pCard = participants[0].laidDown[0];
+        let nCard = participants[1].laidDown[0];
+        console.log(`${pCard.code} ${nCard.code}`);
+        if(cardMap[pCard.code.charAt(0)] > cardMap[nCard.code.charAt(0)]) {
+            console.log('P wins');
+            document.getElementById('result').innerText = "You win!";
+            player.placeCardsInPile([pCard, nCard]);
+        }else{
+            //NPC wins ties. Git gud.
+            console.log('N wins');
+            document.getElementById('result').innerText = "You lose!";
+            npc.placeCardsInPile([nCard, pCard]);
+        }
+    }
     newGame = () => {
-        participants.forEach(item => item.clearDOMHand());
+        participants.forEach(item => item.clearCardsDOM());
         let newDeckPromise = new Promise((resolve, reject) => {
             resolve(this.newDeck(1));
         })
@@ -46,36 +75,49 @@ class Participant {
     constructor(name, game) {
         this.name = name;
         this.game = game;
+        this.laidDown = [];
     }
     drawCards(numberToDraw) {
         const url = api + `${this.game.deckID}/draw/?count=${numberToDraw}`;
         return this.game.fetchThing(url)
         .then(res => {
-            this.placeCardInPile(res, this.name);
+            this.placeCardsInPile(res.cards, this.name);
         })
     }
-    placeCardInPile(obj, pileName) {
-        let cards = obj.cards;
+    placeCardsInPile(cards, pileName = this.name) {
         let cardDesignators = '';
         cards.forEach(item => cardDesignators += `${item.code},`);
         const url = api + `${this.game.deckID}/pile/${pileName}/add/?cards=${cardDesignators}`
         return this.game.fetchThing(url);
     }
+    drawFromBottomOfPile(numberToDraw, pileName = this.name) {
+        const url = api + `${this.game.deckID}/pile/${pileName}/draw/bottom/?count=${numberToDraw}`;
+        return this.game.fetchThing(url)
+        .then(obj => {
+            let cardArr = obj.cards;
+            this.laidDown = cardArr.map(item => item);
+            console.log(this.laidDown);
+            this.showCardsDOM(cardArr);
+        })
+    }
     getStatus() {
         const url = api + `${this.game.deckID}/pile/${this.name}/list/`
         return this.game.fetchThing(url)
         .then(obj => {
-            let cardArr = obj.piles[this.name].cards; //player is undefined. Needs to evaluate to the variable Player.
-            this.clearDOMHand();
-            cardArr.forEach(item => {
-                let img = document.createElement('img');
-                img.src = item.image;
-                document.getElementById(this.name).appendChild(img);
-            })
+            let cardArr = obj.piles[this.name].cards;
+            this.clearCardsDOM();
             console.log(obj);
+            this.showCardsDOM(cardArr);
         })
-    }    
-    clearDOMHand() {
+    }
+    showCardsDOM(cardArr) {
+        cardArr.forEach(item => {
+            let img = document.createElement('img');
+            img.src = item.image;
+            document.getElementById(this.name).appendChild(img);
+        })        
+    }
+    clearCardsDOM() {
         let yourHand = document.getElementById(this.name)
         while(yourHand.firstChild) {
             yourHand.removeChild(yourHand.firstChild);
@@ -91,13 +133,15 @@ war.preloadDeck();
 const newGameButton = document.getElementById('new-game')
 const drawButton = document.getElementById('draw')
 const statusButton = document.getElementById('status')
+const compareButton = document.getElementById('compare')
 //Listeners
 newGameButton.addEventListener('click', war.newGame)
 drawButton.addEventListener('click', () => {
-    player.drawCards(1);
-    npc.drawCards(1);
+    player.drawFromBottomOfPile(1);
+    npc.drawFromBottomOfPile(1);
 });
 statusButton.addEventListener('click', () => {
     player.getStatus();
     npc.getStatus();
 });
+compareButton.addEventListener('click', war.compareCards);
