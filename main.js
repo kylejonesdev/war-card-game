@@ -28,10 +28,18 @@ class Game {
                 localStorage.setItem('storedDeckID', obj.deck_id);
                 this.deckID = localStorage.getItem('storedDeckID');
                 console.log(this.deckID);
+            return obj;
             });
     }   
+      
     newGame = () => {
-        this.newDeck(1);
+        participants.forEach(item => item.clearDOMHand());
+        let newDeckPromise = new Promise((resolve, reject) => {
+            resolve(this.newDeck(1));
+        })
+        newDeckPromise
+        .then(result => player.drawCards(26))
+        .then(result => npc.drawCards(26));
     }
 }
 class Participant {
@@ -49,12 +57,7 @@ class Participant {
     placeCardInPile(obj, pileName) {
         let cards = obj.cards;
         let cardDesignators = '';
-        cards.forEach(item => {
-            cardDesignators += `${item.code},`;
-            let img = document.createElement('img');
-            img.src = item.image;
-            document.getElementById(pileName).appendChild(img);
-        })
+        cards.forEach(item => cardDesignators += `${item.code},`);
         const url = api + `${this.game.deckID}/pile/${pileName}/add/?cards=${cardDesignators}`
         return this.game.fetchThing(url);
     }
