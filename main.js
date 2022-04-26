@@ -46,29 +46,37 @@ class Game {
             });
     }
     compareCards() {
-        //TODO: Add ability for players to put more than one card in battle. Loop through the array of cards in battle, add up the points, compare totals, then move the entire loser's side to the winner's side. This will require not showing the NPC's cards until "Compare" is pressed.
-        let pCard = participants[0].laidDown[0];
-        let nCard = participants[1].laidDown[0];
-        console.log(`${pCard.code} ${nCard.code}`);
-        if(cardMap[pCard.code.charAt(0)] > cardMap[nCard.code.charAt(0)]) {
+        //TODO: Clear DOM of cards after comparison. Will require a true/false flag for when draw is pressed at the right time.
+        let pCards = participants[0].laidDown;
+        participants[0].laidDown = [];
+        let nCards = participants[1].laidDown;
+        participants[1].laidDown = [];     
+        let pCardsTotal = pCards.reduce((acc, item) => cardMap[item.code.charAt(0)] + acc, 0);
+        let nCardsTotal = nCards.reduce((acc, item) => cardMap[item.code.charAt(0)] + acc, 0);
+        console.log(`${pCardsTotal} ${nCardsTotal}`);
+        npc.showCardsDOM(nCards);
+        if(pCardsTotal > nCardsTotal) {
             console.log('P wins');
             document.getElementById('result').innerText = "You win!";
-            player.placeCardsInPile([pCard, nCard]);
+            player.placeCardsInPile(pCards.concat(nCards));
         }else{
             //NPC wins ties. Git gud.
             console.log('N wins');
             document.getElementById('result').innerText = "You lose!";
-            npc.placeCardsInPile([nCard, pCard]);
+            npc.placeCardsInPile(nCards.concat(pCards));
         }
     }
     newGame = () => {
-        participants.forEach(item => item.clearCardsDOM());
+        participants.forEach(item => {
+            item.clearCardsDOM();
+            item.laidDown = [];
+        });
         let newDeckPromise = new Promise((resolve, reject) => {
             resolve(this.newDeck(1));
         })
         newDeckPromise
-        .then(result => player.drawCards(26))
-        .then(result => npc.drawCards(26));
+        .then(() => player.drawCards(26))
+        .then(() => npc.drawCards(26));
     }
 }
 class Participant {
@@ -92,12 +100,16 @@ class Participant {
     }
     drawFromBottomOfPile(numberToDraw, pileName = this.name) {
         const url = api + `${this.game.deckID}/pile/${pileName}/draw/bottom/?count=${numberToDraw}`;
+        console.log(`${this.name} ${url}`);
         return this.game.fetchThing(url)
         .then(obj => {
-            let cardArr = obj.cards;
-            this.laidDown = cardArr.map(item => item);
+            let cardsArr = obj.cards;
+            cardsArr.forEach(item => {
+                console.log(`${this.name} draws ${item.code}`);
+                this.laidDown.push(item);
+            })
             console.log(this.laidDown);
-            this.showCardsDOM(cardArr);
+            return obj;
         })
     }
     getStatus() {
@@ -137,8 +149,9 @@ const compareButton = document.getElementById('compare')
 //Listeners
 newGameButton.addEventListener('click', war.newGame)
 drawButton.addEventListener('click', () => {
-    player.drawFromBottomOfPile(1);
-    npc.drawFromBottomOfPile(1);
+    player.drawFromBottomOfPile(1)
+    .then(obj => player.showCardsDOM(obj.cards))
+    .then(() => npc.drawFromBottomOfPile(1));
 });
 statusButton.addEventListener('click', () => {
     player.getStatus();
